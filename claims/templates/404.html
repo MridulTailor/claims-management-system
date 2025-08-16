@@ -1,0 +1,73 @@
+{% extends 'claims/base_modern.html' %} {% load static %} {% block title %}404 -
+Page Not Found - ClaimsManager{% endblock %} {% block content %}
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="text-center">
+    <!-- 404 Animation -->
+    <div class="mb-8">
+      <div class="text-9xl font-bold text-primary opacity-20 animate-pulse">
+        404
+      </div>
+    </div>
+
+    <!-- Error Content -->
+    <div class="max-w-md mx-auto space-y-6">
+      <div class="avatar">
+        <div
+          class="w-24 h-24 rounded-full bg-error bg-opacity-10 flex items-center justify-center mb-4"
+        >
+          <i class="fas fa-search text-4xl text-error opacity-50"></i>
+        </div>
+      </div>
+
+      <h1 class="text-4xl font-bold text-base-content">Oops! Page Not Found</h1>
+
+      <p class="text-lg text-base-content opacity-70">
+        The page you're looking for seems to have wandered off. Don't worry, it
+        happens to the best of us!
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+        <a href="{% url 'claims_list' %}" class="btn btn-primary">
+          <i class="fas fa-home mr-2"></i>
+          Go Home
+        </a>
+
+        <button onclick="history.back()" class="btn btn-outline">
+          <i class="fas fa-arrow-left mr-2"></i>
+          Go Back
+        </button>
+      </div>
+
+      <!-- Helpful Links -->
+      <div class="pt-8 border-t border-base-300">
+        <p class="text-sm text-base-content opacity-50 mb-4">
+          Maybe try one of these:
+        </p>
+        <div class="flex flex-wrap justify-center gap-2">
+          <a href="{% url 'claims_list' %}" class="link link-primary"
+            >Claims Dashboard</a
+          >
+          <a href="{% url 'admin_dashboard' %}" class="link link-primary"
+            >Analytics</a
+          >
+          <a href="{% url 'login' %}" class="link link-primary">Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Background Animation -->
+<div class="fixed inset-0 -z-10 overflow-hidden">
+  <div
+    class="absolute -top-40 -right-40 w-80 h-80 bg-primary bg-opacity-5 rounded-full animate-pulse"
+  ></div>
+  <div
+    class="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary bg-opacity-5 rounded-full animate-pulse"
+    style="animation-delay: 1s"
+  ></div>
+</div>
+
+<script></script>
+{% endblock %}

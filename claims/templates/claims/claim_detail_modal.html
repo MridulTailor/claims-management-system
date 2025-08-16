@@ -1,0 +1,302 @@
+{% load static %}
+{% load claims_extras %}
+
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h3 class="text-2xl font-bold">Claim Details</h3>
+      <p class="text-base-content opacity-70">
+        Claim ID: <span class="font-mono">{{ claim.id }}</span>
+      </p>
+    </div>
+    <div class="flex items-center space-x-2">
+      {% if claim.status == 'Paid' %}
+      <div class="badge badge-success badge-lg gap-2">
+        <i class="fas fa-check-circle"></i>
+        {{ claim.status }}
+      </div>
+      {% elif claim.status == 'Denied' %}
+      <div class="badge badge-error badge-lg gap-2">
+        <i class="fas fa-times-circle"></i>
+        {{ claim.status }}
+      </div>
+      {% elif claim.status == 'Under Review' %}
+      <div class="badge badge-warning badge-lg gap-2">
+        <i class="fas fa-clock"></i>
+        {{ claim.status }}
+      </div>
+      {% else %}
+      <div class="badge badge-info badge-lg gap-2">
+        <i class="fas fa-info-circle"></i>
+        {{ claim.status }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Patient Information -->
+    <div class="card bg-base-200 shadow-sm">
+      <div class="card-body">
+        <h4 class="card-title text-lg">
+          <i class="fas fa-user text-primary mr-2"></i>
+          Patient Information
+        </h4>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm opacity-70">Name:</span>
+            <span class="font-semibold">{{ claim.patient_name }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm opacity-70">Patient ID:</span>
+            <span class="font-mono">{{ claim.patient_id }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm opacity-70">Date of Birth:</span>
+            <span>{{ claim.patient_dob|date:"M d, Y" }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Claim Information -->
+    <div class="card bg-base-200 shadow-sm">
+      <div class="card-body">
+        <h4 class="card-title text-lg">
+          <i class="fas fa-file-medical text-primary mr-2"></i>
+          Claim Information
+        </h4>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm opacity-70">Claim Date:</span>
+            <span>{{ claim.claim_date|date:"M d, Y" }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm opacity-70">Amount:</span>
+            <span class="text-xl font-bold text-primary"
+              >${{ claim.claim_amount|floatformat:2 }}</span
+            >
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm opacity-70">Insurer:</span>
+            <span class="font-semibold">{{ claim.insurer_name }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Claim Details -->
+  {% if claim.details.all %}
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body">
+      <h4 class="card-title text-lg mb-4">
+        <i class="fas fa-list-ul text-primary mr-2"></i>
+        Claim Details
+      </h4>
+      <div class="space-y-4">
+        {% for detail in claim.details.all %}
+        <div class="card bg-base-200 shadow-sm">
+          <div class="card-body p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <span class="text-sm opacity-70">CPT Codes:</span>
+                <div class="flex flex-wrap gap-1 mt-1">
+                  {% for code in detail.cpt_codes|split:"," %}
+                  <span class="badge badge-outline badge-sm"
+                    >{{ code.strip }}</span
+                  >
+                  {% endfor %}
+                </div>
+              </div>
+              {% if detail.denial_reason %}
+              <div>
+                <span class="text-sm opacity-70">Denial Reason:</span>
+                <p class="text-sm mt-1 p-2 bg-error bg-opacity-10 rounded">
+                  {{ detail.denial_reason }}
+                </p>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Flags and Notes -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Flags -->
+    {% if claim.claim_flags.all %}
+    <div class="card bg-base-100 shadow-sm">
+      <div class="card-body">
+        <h4 class="card-title text-lg">
+          <i class="fas fa-flag text-warning mr-2"></i>
+          Flags
+        </h4>
+        <div class="space-y-3">
+          {% for flag in claim.claim_flags.all %}
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+              <h5 class="font-bold">{{ flag.reason }}</h5>
+              <p class="text-sm opacity-70">
+                Flagged by {{ flag.user.username }} on {{
+                flag.flagged_at|date:"M d, Y g:i A" }}
+              </p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Notes -->
+    {% if claim.claim_notes.all %}
+    <div class="card bg-base-100 shadow-sm">
+      <div class="card-body">
+        <h4 class="card-title text-lg">
+          <i class="fas fa-sticky-note text-info mr-2"></i>
+          Notes
+        </h4>
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+          {% for note in claim.claim_notes.all %}
+          <div class="card bg-base-200 shadow-sm">
+            <div class="card-body p-4">
+              <div class="flex items-start justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <div class="badge badge-outline badge-sm">
+                    {{ note.note_type }}
+                  </div>
+                  <span class="text-sm font-semibold"
+                    >{{ note.user.username }}</span
+                  >
+                </div>
+                <span class="text-xs opacity-50"
+                  >{{ note.created_at|timesince }} ago</span
+                >
+              </div>
+              <p class="text-sm">{{ note.content }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Add Note Section (for authenticated users) -->
+  {% if user.is_authenticated %}
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body">
+      <h4 class="card-title text-lg">
+        <i class="fas fa-plus text-success mr-2"></i>
+        Add Note
+      </h4>
+      <form
+        hx-post="{% url 'add_note' claim.id %}"
+        hx-target="#notes-section"
+        hx-swap="innerHTML"
+        class="space-y-4"
+      >
+        {% csrf_token %}
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Note Type</span>
+          </label>
+          <select
+            name="note_type"
+            class="select select-bordered select-primary"
+          >
+            <option value="User Note">User Note</option>
+            <option value="Admin Note">Admin Note</option>
+            <option value="System Flag">System Flag</option>
+          </select>
+        </div>
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Content</span>
+          </label>
+          <textarea
+            name="content"
+            class="textarea textarea-bordered textarea-primary h-24"
+            placeholder="Enter your note here..."
+            required
+          ></textarea>
+        </div>
+        <div class="card-actions justify-end">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            Add Note
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Action Buttons -->
+  <div class="card-actions justify-end space-x-2">
+    {% if user.is_authenticated %}
+    <div class="dropdown dropdown-top dropdown-end">
+      <div tabindex="0" role="button" class="btn btn-warning">
+        <i class="fas fa-flag mr-2"></i>
+        Flag Claim
+        <i class="fas fa-chevron-up ml-1"></i>
+      </div>
+      <ul
+        tabindex="0"
+        class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64 mb-2"
+      >
+        <li>
+          <a
+            hx-post="{% url 'flag_claim' claim.id %}"
+            hx-vals='{"reason": "Review Required"}'
+            hx-confirm="Flag this claim for review?"
+          >
+            <i class="fas fa-exclamation-triangle mr-2"></i>Review Required</a
+          >
+        </li>
+        <li>
+          <a
+            hx-post="{% url 'flag_claim' claim.id %}"
+            hx-vals='{"reason": "Documentation Issue"}'
+            hx-confirm="Flag this claim for documentation issues?"
+          >
+            <i class="fas fa-file-alt mr-2"></i>Documentation Issue</a
+          >
+        </li>
+        <li>
+          <a
+            hx-post="{% url 'flag_claim' claim.id %}"
+            hx-vals='{"reason": "Billing Error"}'
+            hx-confirm="Flag this claim for billing errors?"
+          >
+            <i class="fas fa-dollar-sign mr-2"></i>Billing Error</a
+          >
+        </li>
+      </ul>
+    </div>
+    {% endif %}
+
+    <button class="btn btn-outline" onclick="window.print()">
+      <i class="fas fa-print mr-2"></i>
+      Print
+    </button>
+
+    <a
+      href="{% url 'claim_detail' claim.id %}"
+      target="_blank"
+      class="btn btn-primary btn-outline"
+    >
+      <i class="fas fa-external-link-alt mr-2"></i>
+      Open in New Tab
+    </a>
+  </div>
+</div>

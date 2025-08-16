@@ -1,0 +1,141 @@
+{% extends 'claims/base_modern.html' %} {% load static %} {% block title %}Login
+- ClaimsManager{% endblock %} {% block content %}
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="card w-full max-w-md shadow-2xl bg-base-100">
+    <div class="card-body">
+      <!-- Logo and Header -->
+      <div class="text-center mb-6">
+        <div class="avatar">
+          <div
+            class="w-16 rounded-full bg-primary text-primary-content flex items-center justify-center mb-4"
+          >
+            <i class="fas fa-shield-alt text-2xl"></i>
+          </div>
+        </div>
+        <h1 class="text-3xl font-bold text-primary mb-2">ClaimsManager</h1>
+        <p class="text-base-content opacity-70">Sign in to your account</p>
+      </div>
+
+      <!-- Error Messages -->
+      {% if form.errors %}
+      <div class="alert alert-error mb-4">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>
+          <h3 class="font-bold">Authentication Failed</h3>
+          <div class="text-xs">
+            Please check your credentials and try again.
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Login Form -->
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+
+        <!-- Username Field -->
+        <div class="form-control">
+          <label class="label" for="{{ form.username.id_for_label }}">
+            <span class="label-text font-semibold">
+              <i class="fas fa-user mr-2"></i>Username
+            </span>
+          </label>
+          <input
+            type="text"
+            name="{{ form.username.name }}"
+            id="{{ form.username.id_for_label }}"
+            class="input input-bordered input-primary w-full"
+            placeholder="Enter your username"
+            required
+            autocomplete="username"
+          />
+          {% if form.username.errors %}
+          <label class="label">
+            <span class="label-text-alt text-error"
+              >{{ form.username.errors.0 }}</span
+            >
+          </label>
+          {% endif %}
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-control">
+          <label class="label" for="{{ form.password.id_for_label }}">
+            <span class="label-text font-semibold">
+              <i class="fas fa-lock mr-2"></i>Password
+            </span>
+          </label>
+          <div class="relative">
+            <input
+              type="password"
+              name="{{ form.password.name }}"
+              id="{{ form.password.id_for_label }}"
+              class="input input-bordered input-primary w-full pr-10"
+              placeholder="Enter your password"
+              required
+              autocomplete="current-password"
+              x-data="{ show: false }"
+              :type="show ? 'text' : 'password'"
+            />
+            <button
+              type="button"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center"
+              x-data="{ show: false }"
+              @click="show = !show; 
+                                        const input = document.getElementById('{{ form.password.id_for_label }}'); 
+                                        input.type = show ? 'text' : 'password'"
+            >
+              <i
+                class="fas fa-eye text-base-content opacity-50"
+                x-show="!show"
+              ></i>
+              <i
+                class="fas fa-eye-slash text-base-content opacity-50"
+                x-show="show"
+              ></i>
+            </button>
+          </div>
+          {% if form.password.errors %}
+          <label class="label">
+            <span class="label-text-alt text-error"
+              >{{ form.password.errors.0 }}</span
+            >
+          </label>
+          {% endif %}
+        </div>
+
+        <!-- Remember Me -->
+        <div class="form-control">
+          <label class="label cursor-pointer">
+            <span class="label-text">Remember me</span>
+            <input type="checkbox" class="checkbox checkbox-primary" />
+          </label>
+        </div>
+
+        <!-- Login Button -->
+        <div class="form-control mt-6">
+          <button type="submit" class="btn btn-primary btn-block">
+            <i class="fas fa-sign-in-alt mr-2"></i>
+            Sign In
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Background Pattern -->
+<div class="fixed inset-0 -z-10 opacity-5">
+  <div
+    class="absolute inset-0"
+    style="
+      background-image: radial-gradient(
+        circle at 1px 1px,
+        rgba(255, 255, 255, 0.15) 1px,
+        transparent 0
+      );
+      background-size: 20px 20px;
+    "
+  ></div>
+</div>
+{% endblock %}

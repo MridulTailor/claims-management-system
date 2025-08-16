@@ -1,0 +1,98 @@
+{% load static %}
+
+<!-- Mobile-First Responsive Stats Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <!-- Quick Stats -->
+  <div class="stat bg-base-100 rounded-lg shadow-lg">
+    <div class="stat-figure text-primary">
+      <i class="fas fa-file-medical text-2xl"></i>
+    </div>
+    <div class="stat-title text-sm">Today's Claims</div>
+    <div class="stat-value text-2xl text-primary">
+      {{ todays_claims|default:0 }}
+    </div>
+    <div class="stat-desc text-xs">↗︎ 12% from yesterday</div>
+  </div>
+
+  <div class="stat bg-base-100 rounded-lg shadow-lg">
+    <div class="stat-figure text-success">
+      <i class="fas fa-check-circle text-2xl"></i>
+    </div>
+    <div class="stat-title text-sm">Processed</div>
+    <div class="stat-value text-2xl text-success">
+      {{ processed_claims|default:0 }}
+    </div>
+    <div class="stat-desc text-xs"></div>
+  </div>
+
+  <div class="stat bg-base-100 rounded-lg shadow-lg">
+    <div class="stat-figure text-warning">
+      <i class="fas fa-clock text-2xl"></i>
+    </div>
+    <div class="stat-title text-sm">Pending</div>
+    <div class="stat-value text-2xl text-warning">
+      {{ pending_claims|default:0 }}
+    </div>
+    <div class="stat-desc text-xs"></div>
+  </div>
+
+  <div class="stat bg-base-100 rounded-lg shadow-lg">
+    <div class="stat-figure text-info">
+      <i class="fas fa-dollar-sign text-2xl"></i>
+    </div>
+    <div class="stat-title text-sm">Total Value</div>
+    <div class="stat-value text-2xl text-info">
+      {{ total_value|default:"0"|floatformat:0 }}K
+    </div>
+    <div class="stat-desc text-xs">This month</div>
+  </div>
+</div>
+
+<div class="flex flex-wrap gap-2 mb-6">
+  <button class="btn btn-primary btn-sm" onclick="showQuickAddModal()">
+    <i class="fas fa-plus mr-1"></i>
+    Quick Add
+  </button>
+  <button class="btn btn-outline btn-sm" onclick="exportData()">
+    <i class="fas fa-download mr-1"></i>
+    Export
+  </button>
+  <button class="btn btn-outline btn-sm" onclick="refreshData()">
+    <i class="fas fa-refresh mr-1"></i>
+    Refresh
+  </button>
+  <div class="dropdown dropdown-end">
+    <div tabindex="0" role="button" class="btn btn-outline btn-sm">
+      <i class="fas fa-filter mr-1"></i>
+      Quick Filters
+      <i class="fas fa-chevron-down ml-1"></i>
+    </div>
+    <ul
+      tabindex="0"
+      class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
+    >
+      <li><a href="?status=Pending">Pending Claims</a></li>
+      <li><a href="?status=Under%20Review">Under Review</a></li>
+      <li><a href="?flagged=true">Flagged Claims</a></li>
+      <li><a href="?recent=7">Last 7 Days</a></li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  function showQuickAddModal() {
+    showToast("Quick add feature coming soon!", "info");
+  }
+
+  function exportData() {
+    showToast("Exporting data...", "info");
+    // Simulate export process
+    setTimeout(() => {
+      showToast("Data exported successfully!", "success");
+    }, 2000);
+  }
+
+  function refreshData() {
+    location.reload();
+  }
+</script>

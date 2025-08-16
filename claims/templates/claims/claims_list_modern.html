@@ -1,0 +1,608 @@
+{% extends 'claims/base_modern.html' %}
+{% load static %}
+
+{% block title %}Claims Dashboard - ClaimsManager{% endblock %}
+
+{% block breadcrumb_items %}
+<li>Claims Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<div x-data="claimsData()" class="space-y-6">
+    
+    <!-- Filter Section -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="card-title">
+                    <i class="fas fa-filter text-primary mr-2"></i>
+                    Advanced Filters
+                </h2>
+                <button @click="toggleFilters()" class="btn btn-outline btn-sm">
+                    <i class="fas fa-chevron-down mr-2" :class="{ 'rotate-180': showFilters }"></i>
+                    <span x-text="showFilters ? 'Hide Filters' : 'Show Filters'"></span>
+                </button>
+            </div>
+            
+            <div x-show="showFilters" x-transition:duration.300ms>
+                <form method="GET" 
+                      id="claims-filter-form"
+                      class="space-y-4" 
+                      hx-get="{% url 'claims_list' %}" 
+                      hx-target="#claims-table-container" 
+                      hx-indicator="#loading-spinner"
+                      hx-timeout="30000"
+                      hx-trigger="submit"
+                      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                      role="search"
+                      aria-label="Claims filter form">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Search Input -->
+                        <div class="form-control">
+                            <label class="label" for="search-input">
+                                <span class="label-text font-semibold">
+                                    <i class="fas fa-search mr-1" aria-hidden="true"></i>Search Claims
+                                </span>
+                            </label>
+                            <input type="text" 
+                                   id="search-input"
+                                   name="search" 
+                                   value="{{ search_query }}" 
+                                   placeholder="Patient name, Claim ID, or Insurer..." 
+                                   class="input input-bordered input-primary w-full"
+                                   autocomplete="off"
+                                   hx-get="{% url 'claims_list' %}"
+                                   hx-target="#claims-table-container"
+                                   hx-trigger="keyup changed delay:1000ms"
+                                   hx-include="#claims-filter-form"
+                                   hx-indicator="#loading-spinner"
+                                   aria-describedby="search-help">
+                            <div id="search-help" class="text-xs text-base-content/60 mt-1">
+                                Search by patient name, claim ID, or insurer
+                            </div>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="form-control">
+                            <label class="label" for="status-filter">
+                                <span class="label-text font-semibold">
+                                    <i class="fas fa-flag mr-1" aria-hidden="true"></i>Status
+                                </span>
+                            </label>
+                            <select name="status" 
+                                    id="status-filter"
+                                    class="select select-bordered select-primary w-full"
+                                    hx-get="{% url 'claims_list' %}"
+                                    hx-target="#claims-table-container"
+                                    hx-trigger="change"
+                                    hx-include="#claims-filter-form"
+                                    hx-indicator="#loading-spinner"
+                                    aria-describedby="status-help">
+                                <option value="">All Statuses</option>
+                                {% for status in statuses %}
+                                    <option value="{{ status }}" {% if status == status_filter %}selected{% endif %}>
+                                        {{ status }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div id="status-help" class="text-xs text-base-content/60 mt-1">
+                                Filter by claim status
+                            </div>
+                        </div>
+
+                        <!-- Insurer Filter -->
+                        <div class="form-control">
+                            <label class="label" for="insurer-filter">
+                                <span class="label-text font-semibold">
+                                    <i class="fas fa-building mr-1" aria-hidden="true"></i>Insurer
+                                </span>
+                            </label>
+                            <select name="insurer" 
+                                    id="insurer-filter"
+                                    class="select select-bordered select-primary w-full"
+                                    hx-get="{% url 'claims_list' %}"
+                                    hx-target="#claims-table-container"
+                                    hx-trigger="change"
+                                    hx-include="#claims-filter-form"
+                                    hx-indicator="#loading-spinner"
+                                    aria-describedby="insurer-help">
+                                <option value="">All Insurers</option>
+                                {% for insurer in insurers %}
+                                    <option value="{{ insurer }}" {% if insurer == insurer_filter %}selected{% endif %}>
+                                        {{ insurer }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div id="insurer-help" class="text-xs text-base-content/60 mt-1">
+                                Filter by insurance company
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-semibold">Actions</span>
+                            </label>
+                            <div class="join w-full">
+                                <button type="submit" 
+                                        class="btn btn-primary join-item flex-1"
+                                        aria-label="Apply filters">
+                                    <i class="fas fa-filter mr-2" aria-hidden="true"></i>Apply
+                                </button>
+                                <a href="{% url 'claims_list' %}" 
+                                   class="btn btn-outline join-item"
+                                   aria-label="Clear all filters">
+                                    <i class="fas fa-times mr-2" aria-hidden="true"></i>Clear
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Filters Row -->
+                    <div class="divider">Advanced Filters</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Amount Range -->
+                        <div class="form-control">
+                            <label class="label" for="min-amount">
+                                <span class="label-text font-semibold">
+                                    <i class="fas fa-dollar-sign mr-1" aria-hidden="true"></i>Min Amount
+                                </span>
+                            </label>
+                            <input type="number" 
+                                   id="min-amount"
+                                   name="min_amount" 
+                                   value="{{ min_amount }}" 
+                                   placeholder="0.00" 
+                                   step="0.01"
+                                   min="0"
+                                   class="input input-bordered input-primary w-full"
+                                   aria-describedby="min-amount-help">
+                            <div id="min-amount-help" class="text-xs text-base-content/60 mt-1">
+                                Minimum claim amount
+                            </div>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label" for="max-amount">
+                                <span class="label-text font-semibold">
+                                    <i class="fas fa-dollar-sign mr-1" aria-hidden="true"></i>Max Amount
+                                </span>
+                            </label>
+                            <input type="number" 
+                                   id="max-amount"
+                                   name="max_amount" 
+                                   value="{{ max_amount }}" 
+                                   placeholder="999999.99" 
+                                   step="0.01"
+                                   min="0"
+                                   class="input input-bordered input-primary w-full"
+                                   aria-describedby="max-amount-help">
+                            <div id="max-amount-help" class="text-xs text-base-content/60 mt-1">
+                                Maximum claim amount
+                            </div>
+                        </div>
+                        
+                        <!-- Date Range -->
+                        <div class="form-control">
+                            <label class="label" for="date-from">
+                                <span class="label-text font-semibold">
+                                    <i class="fas fa-calendar mr-1" aria-hidden="true"></i>From Date
+                                </span>
+                            </label>
+                            <input type="date" 
+                                   id="date-from"
+                                   name="date_from" 
+                                   value="{{ date_from }}" 
+                                   class="input input-bordered input-primary w-full"
+                                   aria-describedby="date-from-help">
+                            <div id="date-from-help" class="text-xs text-base-content/60 mt-1">
+                                Earliest claim date
+                            </div>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label" for="date-to">
+                                <span class="label-text font-semibold">
+                                    <i class="fas fa-calendar mr-1" aria-hidden="true"></i>To Date
+                                </span>
+                            </label>
+                            <input type="date" 
+                                   id="date-to"
+                                   name="date_to" 
+                                   value="{{ date_to }}" 
+                                   class="input input-bordered input-primary w-full"
+                                   aria-describedby="date-to-help">
+                            <div id="date-to-help" class="text-xs text-base-content/60 mt-1">
+                                Latest claim date
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Claims Container with Loading Overlay -->
+    <div class="relative">
+        <!-- Loading Spinner - positioned absolutely to avoid layout shift -->
+        <div id="loading-spinner" class="htmx-indicator absolute inset-0 bg-base-100/80 backdrop-blur-sm flex items-center justify-center z-10">
+            <div class="flex items-center">
+                <div class="loading loading-spinner loading-md text-primary"></div>
+                <span class="ml-2 text-base-content/60">Loading claims...</span>
+            </div>
+        </div>
+
+        <!-- Claims Table Container -->
+        <div id="claims-table-container">
+            {% include 'claims/claims_table_partial.html' %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Define claimsData function for Alpine.js
+    window.claimsData = function() {
+        return {
+            showFilters: JSON.parse(localStorage.getItem('showFilters') || 'false'),
+            
+            toggleFilters() {
+                this.showFilters = !this.showFilters;
+                localStorage.setItem('showFilters', JSON.stringify(this.showFilters));
+            }
+        };
+    };
+
+    // Claims table management namespace to avoid conflicts
+    window.ClaimsTable = window.ClaimsTable || {
+        currentSort: { field: null, direction: 'asc' },
+
+        // Pagination functionality
+        changeItemsPerPage: function(perPage) {
+            const filterForm = document.getElementById('claims-filter-form');
+            if (filterForm) {
+                // Add per_page parameter as hidden input to the form
+                let perPageInput = document.getElementById('per-page-input');
+                if (!perPageInput) {
+                    perPageInput = document.createElement('input');
+                    perPageInput.type = 'hidden';
+                    perPageInput.name = 'per_page';
+                    perPageInput.id = 'per-page-input';
+                    filterForm.appendChild(perPageInput);
+                }
+                perPageInput.value = perPage;
+                
+                // Remove page parameter to reset to first page
+                let pageInput = document.getElementById('page-input');
+                if (pageInput) {
+                    pageInput.remove();
+                }
+                
+                // Trigger HTMX request using the form
+                if (window.htmx) {
+                    htmx.trigger(filterForm, 'submit');
+                } else {
+                    filterForm.submit();
+                }
+            } else {
+                // Fallback to URL navigation if form not found
+                const url = new URL(window.location);
+                url.searchParams.set('per_page', perPage);
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
+            }
+        },
+
+        jumpToPage: function() {
+            const pageInput = document.getElementById('page-jump');
+            if (!pageInput) return;
+            
+            const pageNumber = parseInt(pageInput.value);
+            const maxPage = parseInt(pageInput.getAttribute('max'));
+            
+            if (pageNumber >= 1 && pageNumber <= maxPage) {
+                const filterForm = document.getElementById('claims-filter-form');
+                if (filterForm) {
+                    // Add page parameter as hidden input to the form
+                    let pageHiddenInput = document.getElementById('page-input');
+                    if (!pageHiddenInput) {
+                        pageHiddenInput = document.createElement('input');
+                        pageHiddenInput.type = 'hidden';
+                        pageHiddenInput.name = 'page';
+                        pageHiddenInput.id = 'page-input';
+                        filterForm.appendChild(pageHiddenInput);
+                    }
+                    pageHiddenInput.value = pageNumber;
+                    
+                    // Trigger HTMX request using the form
+                    if (window.htmx) {
+                        htmx.trigger(filterForm, 'submit');
+                    } else {
+                        filterForm.submit();
+                    }
+                } else {
+                    // Fallback to URL navigation if form not found
+                    const url = new URL(window.location);
+                    url.searchParams.set('page', pageNumber);
+                    window.location.href = url.toString();
+                }
+            } else {
+                if (typeof showToast !== 'undefined') {
+                    showToast('Please enter a valid page number', 'error');
+                }
+                pageInput.focus();
+            }
+        },
+
+        goToPage: function(pageNumber) {
+            const filterForm = document.getElementById('claims-filter-form');
+            if (filterForm) {
+                // Add page parameter as hidden input to the form
+                let pageInput = document.getElementById('page-input');
+                if (!pageInput) {
+                    pageInput = document.createElement('input');
+                    pageInput.type = 'hidden';
+                    pageInput.name = 'page';
+                    pageInput.id = 'page-input';
+                    filterForm.appendChild(pageInput);
+                }
+                pageInput.value = pageNumber;
+                
+                // Trigger HTMX request using the form
+                if (window.htmx) {
+                    htmx.trigger(filterForm, 'submit');
+                } else {
+                    filterForm.submit();
+                }
+            } else {
+                // Fallback to URL navigation if form not found
+                const url = new URL(window.location);
+                url.searchParams.set('page', pageNumber);
+                window.location.href = url.toString();
+            }
+        },
+
+        // Table sorting functionality
+        sortTable: function(field) {
+            // Toggle direction if same field
+            if (this.currentSort.field === field) {
+                this.currentSort.direction = this.currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.currentSort.field = field;
+                this.currentSort.direction = 'asc';
+            }
+            
+            // Get the filter form and add sort parameters
+            const filterForm = document.getElementById('claims-filter-form');
+            if (filterForm) {
+                // Add sort parameters as hidden inputs to the form
+                let sortInput = document.getElementById('sort-field');
+                if (!sortInput) {
+                    sortInput = document.createElement('input');
+                    sortInput.type = 'hidden';
+                    sortInput.name = 'sort';
+                    sortInput.id = 'sort-field';
+                    filterForm.appendChild(sortInput);
+                }
+                sortInput.value = field;
+                
+                let directionInput = document.getElementById('sort-direction');
+                if (!directionInput) {
+                    directionInput = document.createElement('input');
+                    directionInput.type = 'hidden';
+                    directionInput.name = 'direction';
+                    directionInput.id = 'sort-direction';
+                    filterForm.appendChild(directionInput);
+                }
+                directionInput.value = this.currentSort.direction;
+                
+                // Trigger HTMX request using the form
+                if (window.htmx) {
+                    htmx.trigger(filterForm, 'submit');
+                } else {
+                    filterForm.submit();
+                }
+            } else {
+                // Fallback to URL navigation if form not found
+                const url = new URL(window.location);
+                url.searchParams.set('sort', field);
+                url.searchParams.set('direction', this.currentSort.direction);
+                window.location.href = url.toString();
+            }
+            
+            // Update sort indicators
+            this.updateSortIndicators(field, this.currentSort.direction);
+            
+            // Announce to screen readers
+            const announcement = `Table sorted by ${field} in ${this.currentSort.direction}ending order`;
+            this.announceToScreenReader(announcement);
+        },
+
+        updateSortIndicators: function(field, direction) {
+            // Reset all sort indicators
+            document.querySelectorAll('th button i.fa-sort, th button i.fa-sort-up, th button i.fa-sort-down')
+                .forEach(icon => {
+                    icon.className = icon.className.replace(/fa-sort-(up|down)/, 'fa-sort');
+                });
+            
+            // Update current sort indicator
+            const currentButton = document.querySelector(`th button[onclick*="${field}"] i`);
+            if (currentButton) {
+                currentButton.className = currentButton.className.replace('fa-sort', `fa-sort-${direction === 'asc' ? 'up' : 'down'}`);
+            }
+        },
+
+        // Utility functions for actions
+        printClaim: function(claimId) {
+            const printWindow = window.open(`/claims/${claimId}/print/`, '_blank');
+            if (printWindow) {
+                printWindow.onload = function() {
+                    printWindow.print();
+                    printWindow.close();
+                };
+            }
+        },
+
+        shareClaim: function(claimId) {
+            if (navigator.share) {
+                navigator.share({
+                    title: `Claim #${claimId}`,
+                    text: `View details for insurance claim #${claimId}`,
+                    url: `/claims/${claimId}/`
+                }).catch(() => {
+                    if (typeof showToast !== 'undefined') {
+                        showToast('Error sharing claim', 'error');
+                    }
+                });
+            } else {
+                // Fallback: copy to clipboard
+                const url = `${window.location.origin}/claims/${claimId}/`;
+                navigator.clipboard.writeText(url).then(() => {
+                    if (typeof showToast !== 'undefined') {
+                        showToast('Claim link copied to clipboard', 'success');
+                    }
+                }).catch(() => {
+                    // Final fallback: show URL in prompt
+                    prompt('Copy this link:', url);
+                });
+            }
+        },
+
+        handleTableRowKeydown: function(event, claimId) {
+            const row = event.currentTarget;
+            const table = row.closest('table');
+            const allRows = table.querySelectorAll('tbody tr');
+            const currentIndex = Array.from(allRows).indexOf(row);
+            
+            switch(event.key) {
+                case 'ArrowUp':
+                    event.preventDefault();
+                    if (currentIndex > 0) {
+                        allRows[currentIndex - 1].focus();
+                    }
+                    break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    if (currentIndex < allRows.length - 1) {
+                        allRows[currentIndex + 1].focus();
+                    }
+                    break;
+                case 'Enter':
+                case ' ':
+                    event.preventDefault();
+                    const viewButton = row.querySelector('.btn-primary');
+                    if (viewButton) {
+                        viewButton.click();
+                    }
+                    break;
+                case 'f':
+                case 'F':
+                    if (event.ctrlKey || event.metaKey) return; // Don't interfere with browser find
+                    event.preventDefault();
+                    const flagButton = row.querySelector('.btn-warning');
+                    if (flagButton) {
+                        flagButton.click();
+                    }
+                    break;
+                case 'm':
+                case 'M':
+                    event.preventDefault();
+                    const moreButton = row.querySelector('.btn-ghost');
+                    if (moreButton) {
+                        moreButton.click();
+                    }
+                    break;
+            }
+        },
+
+        handlePageJump: function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.jumpToPage();
+            }
+        },
+
+        announceToScreenReader: function(message) {
+            const announcer = document.createElement('div');
+            announcer.setAttribute('aria-live', 'polite');
+            announcer.setAttribute('aria-atomic', 'true');
+            announcer.className = 'sr-only';
+            announcer.textContent = message;
+            
+            document.body.appendChild(announcer);
+            setTimeout(() => {
+                if (document.body.contains(announcer)) {
+                    document.body.removeChild(announcer);
+                }
+            }, 1000);
+        }
+    };
+
+    // Create global functions that use the namespace
+    window.changeItemsPerPage = function(perPage) { return window.ClaimsTable.changeItemsPerPage(perPage); };
+    window.jumpToPage = function() { return window.ClaimsTable.jumpToPage(); };
+    window.goToPage = function(pageNumber) { return window.ClaimsTable.goToPage(pageNumber); };
+    window.sortTable = function(field) { return window.ClaimsTable.sortTable(field); };
+    window.printClaim = function(claimId) { return window.ClaimsTable.printClaim(claimId); };
+    window.shareClaim = function(claimId) { return window.ClaimsTable.shareClaim(claimId); };
+    window.handleTableRowKeydown = function(event, claimId) { return window.ClaimsTable.handleTableRowKeydown(event, claimId); };
+    window.handlePageJump = function(event) { return window.ClaimsTable.handlePageJump(event); };
+
+    // HTMX error handling and event listeners
+    document.addEventListener('htmx:responseError', function(evt) {
+        console.error('HTMX Response Error:', evt.detail);
+        const errorMessage = 'Failed to load claims. Please refresh the page and try again.';
+        
+        // Show error message to user
+        if (typeof showToast !== 'undefined') {
+            showToast(errorMessage, 'error');
+        } else {
+            alert(errorMessage);
+        }
+    });
+
+    document.addEventListener('htmx:sendError', function(evt) {
+        console.error('HTMX Send Error:', evt.detail);
+        const errorMessage = 'Network error. Please check your connection and try again.';
+        
+        // Show error message to user
+        if (typeof showToast !== 'undefined') {
+            showToast(errorMessage, 'error');
+        } else {
+            alert(errorMessage);
+        }
+    });
+
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        // Re-initialize sort indicators after HTMX content swap
+        const urlParams = new URLSearchParams(window.location.search);
+        const sortField = urlParams.get('sort');
+        const sortDirection = urlParams.get('direction') || 'asc';
+        
+        if (sortField) {
+            window.ClaimsTable.currentSort = { field: sortField, direction: sortDirection };
+            window.ClaimsTable.updateSortIndicators(sortField, sortDirection);
+        }
+        
+        // Re-focus on first table row if needed
+        const firstRow = document.querySelector('#claims-table-container tbody tr[tabindex="0"]');
+        if (firstRow && !document.activeElement.matches('input, button, select, textarea')) {
+            setTimeout(() => firstRow.focus(), 100);
+        }
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update sort indicators from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sortField = urlParams.get('sort');
+        const sortDirection = urlParams.get('direction') || 'asc';
+        
+        if (sortField) {
+            window.ClaimsTable.currentSort = { field: sortField, direction: sortDirection };
+            window.ClaimsTable.updateSortIndicators(sortField, sortDirection);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'claims/base_modern.html' %} {% load static %} {% block title %}Claim
+#{{ claim.id }} - ClaimsManager{% endblock %} {% block breadcrumb_items %}
+<li><a href="{% url 'claims_list' %}">Claims</a></li>
+<li>Claim #{{ claim.id }}</li>
+{% endblock %} {% block content %}
+<div class="max-w-6xl mx-auto">
+  {% include 'claims/claim_detail_modal.html' %}
+</div>
+{% endblock %}

@@ -1,0 +1,619 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}Claims Management - Modern SaaS Platform{% endblock %}
+    </title>
+
+    <!-- Tailwind CSS with daisyUI -->
+    <link href="{% static 'css/dist/styles.css' %}" rel="stylesheet" />
+
+    <!-- Alpine.js for interactive components -->
+    <script
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+      defer
+    ></script>
+
+    <!-- HTMX for AJAX interactions -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Icons -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles for additional features -->
+    <style>
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+
+      /* Animation classes */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      /* Loading states */
+      .htmx-indicator {
+        display: none;
+      }
+      .htmx-request .htmx-indicator {
+        display: flex;
+        opacity: 1;
+        transition: opacity 200ms ease-in;
+      }
+      .htmx-request.htmx-indicator {
+        display: flex;
+        opacity: 1;
+        transition: opacity 200ms ease-in;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-base-200" x-data="appData()">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="navbar bg-base-100 shadow-lg border-b border-base-300">
+      <div class="navbar-start">
+        <div class="dropdown">
+          <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h8m-8 6h16"
+              />
+            </svg>
+          </div>
+          <ul
+            tabindex="0"
+            class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+          >
+            <li>
+              <a href="{% url 'claims_list' %}"
+                ><i class="fas fa-tachometer-alt mr-2"></i>Dashboard</a
+              >
+            </li>
+            {% if user.is_authenticated %}
+            <li>
+              <a href="{% url 'admin_dashboard' %}"
+                ><i class="fas fa-chart-bar mr-2"></i>Analytics</a
+              >
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+        <a href="{% url 'claims_list' %}" class="btn btn-ghost text-xl">
+          <i class="fas fa-shield-alt text-primary mr-2"></i>
+          <span class="font-bold text-primary">ClaimsManager</span>
+        </a>
+      </div>
+
+      <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal px-1">
+          <li>
+            <a href="{% url 'claims_list' %}" class="btn btn-ghost"
+              ><i class="fas fa-tachometer-alt mr-2"></i>Dashboard</a
+            >
+          </li>
+          {% if user.is_authenticated %}
+          <li>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-ghost"
+              ><i class="fas fa-chart-bar mr-2"></i>Analytics</a
+            >
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="navbar-end gap-2">
+        <div class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
+            <i class="fas fa-palette"></i>
+          </div>
+          <ul
+            tabindex="0"
+            class="dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+          >
+            <li>
+              <button
+                onclick="setTheme('light')"
+                class="btn btn-ghost btn-sm w-full justify-start"
+              >
+                <i class="fas fa-sun mr-2"></i>Light
+              </button>
+            </li>
+            <li>
+              <button
+                onclick="setTheme('dark')"
+                class="btn btn-ghost btn-sm w-full justify-start"
+              >
+                <i class="fas fa-moon mr-2"></i>Dark
+              </button>
+            </li>
+            <li>
+              <button
+                onclick="setTheme('cupcake')"
+                class="btn btn-ghost btn-sm w-full justify-start"
+              >
+                <i class="fas fa-candy-cane mr-2"></i>Cupcake
+              </button>
+            </li>
+            <li>
+              <button
+                onclick="setTheme('corporate')"
+                class="btn btn-ghost btn-sm w-full justify-start"
+              >
+                <i class="fas fa-building mr-2"></i>Corporate
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="dropdown dropdown-end">
+          <div
+            tabindex="0"
+            role="button"
+            class="btn btn-ghost btn-circle avatar"
+          >
+            <div
+              class="w-10 rounded-full bg-primary text-primary-content flex items-center justify-center"
+            >
+              <i class="fas fa-user"></i>
+            </div>
+          </div>
+          <ul
+            tabindex="0"
+            class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+          >
+            <li class="menu-title">
+              <span>Welcome, {{ user.username }}!</span>
+            </li>
+            <li>
+              <a href="#"><i class="fas fa-user mr-2"></i>Profile</a>
+            </li>
+            <li>
+              <a href="#"><i class="fas fa-cog mr-2"></i>Settings</a>
+            </li>
+            <li><hr /></li>
+            <li>
+              <a href="{% url 'logout' %}"
+                ><i class="fas fa-sign-out-alt mr-2"></i>Logout</a
+              >
+            </li>
+          </ul>
+        </div>
+        {% else %}
+        <a href="{% url 'login' %}" class="btn btn-primary">
+          <i class="fas fa-sign-in-alt mr-2"></i>Login
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% block breadcrumbs %}
+    <div class="breadcrumbs text-sm p-4 bg-base-100 border-b border-base-300">
+      <ul>
+        <li>
+          <a href="{% url 'claims_list' %}"
+            ><i class="fas fa-home mr-1"></i>Home</a
+          >
+        </li>
+        {% block breadcrumb_items %}{% endblock %}
+      </ul>
+    </div>
+    {% endblock %}
+
+    <div
+      id="toast-container"
+      class="toast toast-end z-50"
+      role="region"
+      aria-label="Notifications"
+    >
+      {% if messages %} {% for message in messages %}
+      <div
+        class="alert alert-{{ message.tags|default:'info' }} fade-in shadow-lg max-w-md"
+        x-data="{ show: true }"
+        x-show="show"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform translate-x-full"
+        x-transition:enter-end="opacity-100 transform translate-x-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-x-0"
+        x-transition:leave-end="opacity-0 transform translate-x-full"
+        role="alert"
+        aria-live="{% if message.tags == 'error' %}assertive{% else %}polite{% endif %}"
+        aria-atomic="true"
+      >
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center">
+            {% if message.tags == 'success' %}
+            <i class="fas fa-check-circle mr-3 text-lg" aria-hidden="true"></i>
+            {% elif message.tags == 'error' %}
+            <i
+              class="fas fa-exclamation-circle mr-3 text-lg"
+              aria-hidden="true"
+            ></i>
+            {% elif message.tags == 'warning' %}
+            <i
+              class="fas fa-exclamation-triangle mr-3 text-lg"
+              aria-hidden="true"
+            ></i>
+            {% else %}
+            <i class="fas fa-info-circle mr-3 text-lg" aria-hidden="true"></i>
+            {% endif %}
+            <div>
+              <span class="font-medium">{{ message }}</span>
+              {% if message.tags == 'error' %}
+              <div class="text-xs mt-1 opacity-75">Please try again.</div>
+              {% endif %}
+            </div>
+          </div>
+          <button
+            @click="show = false"
+            class="btn btn-ghost btn-xs ml-4 flex-shrink-0"
+            aria-label="Dismiss notification"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div
+          class="w-full bg-black bg-opacity-20 h-1 rounded-full mt-2 overflow-hidden"
+        >
+          <div
+            class="bg-current h-full rounded-full animate-shrink"
+            style="animation: shrink {% if message.tags == 'error' %}10{% else %}5{% endif %}s linear forwards"
+          ></div>
+        </div>
+      </div>
+      {% endfor %} {% endif %}
+    </div>
+
+    <!-- Main Content -->
+    <main id="main-content" class="container mx-auto px-4 py-6" role="main">
+      {% include 'components/error_boundary.html' %}
+{% block content %}
+{% endblock %}
+    </main>
+
+    <!-- Include Loading States -->
+    {% include 'components/loading_states.html' %}
+
+    <!-- Loading overlay -->
+    <div
+      x-show="loading"
+      x-transition:opacity
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-base-100 p-6 rounded-lg shadow-xl">
+        <div class="flex items-center space-x-4">
+          <div class="loading loading-spinner loading-md"></div>
+          <span>Loading...</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.appData = function appData() {
+        return {
+          loading: false,
+          sidebarOpen: false,
+          setLoading(state) {
+            this.loading = state;
+          },
+          toggleSidebar() {
+            this.sidebarOpen = !this.sidebarOpen;
+          },
+        };
+      };
+
+      function setTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+
+        showToast(`Theme changed to ${theme}`, "success");
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+      });
+
+      function showToast(
+        message,
+        type = "info",
+        duration = 5000,
+        persistent = false
+      ) {
+        const toastContainer = document.getElementById("toast-container");
+
+        const toast = document.createElement("div");
+        toast.className = `alert alert-${type} fade-in shadow-lg max-w-md mb-2`;
+        toast.setAttribute("role", "alert");
+        toast.setAttribute(
+          "aria-live",
+          type === "error" ? "assertive" : "polite"
+        );
+        toast.setAttribute("aria-atomic", "true");
+
+        const iconMap = {
+          success: "fa-check-circle",
+          error: "fa-exclamation-circle",
+          warning: "fa-exclamation-triangle",
+          info: "fa-info-circle",
+        };
+
+        const additionalInfo =
+          type === "error"
+            ? '<div class="text-xs mt-1 opacity-75">Please try again.</div>'
+            : "";
+
+        toast.innerHTML = `
+          <div class="flex items-center justify-between w-full">
+            <div class="flex items-center">
+              <i class="fas ${
+                iconMap[type] || iconMap.info
+              } mr-3 text-lg" aria-hidden="true"></i>
+              <div>
+                <span class="font-medium">${message}</span>
+                ${additionalInfo}
+              </div>
+            </div>
+            <button onclick="this.closest('.alert').remove()" 
+                    class="btn btn-ghost btn-xs ml-4 flex-shrink-0"
+                    aria-label="Dismiss notification">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          ${
+            !persistent
+              ? `
+          <div class="w-full bg-black bg-opacity-20 h-1 rounded-full mt-2 overflow-hidden">
+            <div class="bg-current h-full rounded-full animate-shrink" 
+                 style="animation: shrink ${
+                   type === "error" ? duration * 2 : duration
+                 }ms linear forwards"></div>
+          </div>`
+              : ""
+          }
+        `;
+
+        toast.style.transform = "translateX(100%)";
+        toast.style.opacity = "0";
+        toast.style.transition = "all 0.3s ease-out";
+
+        toastContainer.appendChild(toast);
+
+        requestAnimationFrame(() => {
+          toast.style.transform = "translateX(0)";
+          toast.style.opacity = "1";
+        });
+
+        if (!persistent) {
+          const timeout = type === "error" ? duration * 2 : duration;
+          setTimeout(() => {
+            if (toast.parentElement) {
+              toast.style.transform = "translateX(100%)";
+              toast.style.opacity = "0";
+              setTimeout(() => toast.remove(), 300);
+            }
+          }, timeout);
+        }
+
+        const toasts = toastContainer.querySelectorAll(".alert");
+        if (toasts.length > 5) {
+          toasts[0].remove();
+        }
+
+        return toast;
+      }
+
+      function handleAjaxError(xhr, status, error) {
+        let errorMessage = "An unexpected error occurred";
+
+        if (xhr.status === 0) {
+          errorMessage =
+            "Network connection lost. Please check your internet connection.";
+        } else if (xhr.status === 400) {
+          errorMessage =
+            "Invalid request. Please check your input and try again.";
+        } else if (xhr.status === 401) {
+          errorMessage = "Session expired. Please log in again.";
+          setTimeout(() => (window.location.href = "/login/"), 2000);
+        } else if (xhr.status === 403) {
+          errorMessage = "You do not have permission to perform this action.";
+        } else if (xhr.status === 404) {
+          errorMessage = "The requested resource was not found.";
+        } else if (xhr.status === 500) {
+          errorMessage = "Server error occurred. Please try again.";
+        } else if (xhr.status === 503) {
+          errorMessage = "Service temporarily unavailable. Please try again later.";
+        }
+
+        showToast(errorMessage, "error", 10000);
+      }
+
+      // Retry mechanism for failed requests
+      function retryRequest(requestFunction, maxRetries = 3, delay = 1000) {
+        let retries = 0;
+
+        function attempt() {
+          return requestFunction().catch((error) => {
+            if (retries < maxRetries) {
+              retries++;
+              showToast(
+                `Request failed. Retrying... (${retries}/${maxRetries})`,
+                "warning",
+                2000
+              );
+              return new Promise((resolve) =>
+                setTimeout(resolve, delay * retries)
+              ).then(attempt);
+            } else {
+              throw error;
+            }
+          });
+        }
+
+        return attempt();
+      }
+
+      function monitorConnection() {
+        let wasOnline = navigator.onLine;
+
+        function updateStatus() {
+          const isOnline = navigator.onLine;
+
+          if (!wasOnline && isOnline) {
+            showToast("Connection restored", "success");
+          } else if (wasOnline && !isOnline) {
+            showToast(
+              "Connection lost. Working in offline mode.",
+              "warning",
+              0,
+              true
+            );
+          }
+
+          wasOnline = isOnline;
+
+          document.body.classList.toggle("offline", !isOnline);
+        }
+
+        window.addEventListener("online", updateStatus);
+        window.addEventListener("offline", updateStatus);
+        updateStatus();
+      }
+
+      monitorConnection();
+
+      window.addEventListener('error', function(event) {
+        console.error('JavaScript Error:', event.error);
+        
+        // Prevent infinite recursion by only handling specific errors once
+        if (!window.errorHandled && event.error && event.error.message) {
+          window.errorHandled = true;
+          
+          if (event.error.message.includes('$data') || 
+              event.error.message.includes('Alpine') ||
+              event.error.message.includes('htmx') ||
+              event.error.message.includes('appData')) {
+            
+            if (typeof showToast === 'function') {
+              showToast('Application error detected. Refreshing page...', 'error');
+              setTimeout(() => window.location.reload(), 2000);
+            } else {
+              console.error('Critical error - page will reload');
+              setTimeout(() => window.location.reload(), 2000);
+            }
+          }
+          
+          setTimeout(() => {
+            window.errorHandled = false;
+          }, 5000);
+        }
+      });
+
+      let isRequestInProgress = false;
+      
+      if (!window.htmxInitialized) {
+        window.htmxInitialized = true;
+        
+        document.body.addEventListener("htmx:beforeRequest", function (evt) {
+          if (isRequestInProgress) {
+            evt.preventDefault();
+            return false;
+          }
+          isRequestInProgress = true;
+          
+          const loadingSpinner = document.getElementById('loading-spinner');
+          if (loadingSpinner) {
+            loadingSpinner.style.display = 'flex';
+          }
+          
+          setTimeout(() => {
+            isRequestInProgress = false;
+            if (loadingSpinner) {
+              loadingSpinner.style.display = 'none';
+            }
+          }, 45000);
+        });
+
+        document.body.addEventListener("htmx:responseError", function (evt) {
+          isRequestInProgress = false;
+          if (typeof handleAjaxError === 'function') {
+            handleAjaxError(evt.detail.xhr, evt.detail.xhr.status, evt.detail.xhr.statusText);
+          }
+        });
+
+        document.body.addEventListener("htmx:sendError", function (evt) {
+          isRequestInProgress = false;
+          if (typeof showToast === 'function') {
+            showToast("Request failed to send. Please check your connection.", "error");
+          }
+        });
+
+        document.body.addEventListener("htmx:timeout", function (evt) {
+          isRequestInProgress = false;
+          if (typeof showToast === 'function') {
+            showToast("Request timed out. Please try again.", "warning");
+          }
+        });
+
+        document.body.addEventListener("htmx:afterRequest", function (evt) {
+          isRequestInProgress = false;
+          
+          // Hide loading spinner
+          const loadingSpinner = document.getElementById('loading-spinner');
+          if (loadingSpinner) {
+            loadingSpinner.style.display = 'none';
+          }
+        });
+      }
+
+      // Auto-hide alerts after 5 seconds
+      document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(() => {
+          const alerts = document.querySelectorAll(".alert");
+          alerts.forEach((alert) => {
+            if (alert.getAttribute("x-data")) return; // Skip Alpine.js managed alerts
+            alert.style.transition = "opacity 0.5s ease-out";
+            alert.style.opacity = "0";
+            setTimeout(() => alert.remove(), 500);
+          });
+        }, 5000);
+      });
+    </script>
+  </body>
+</html>

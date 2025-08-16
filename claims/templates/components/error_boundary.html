@@ -1,0 +1,176 @@
+{% load static %}
+
+<!-- Error Boundary Component -->
+<div
+  class="error-boundary"
+  x-data="{ 
+       hasError: false, 
+       errorMessage: '',
+       errorDetails: '',
+       retryCount: 0,
+       maxRetries: 3,
+       handleError(error) {
+         this.hasError = true;
+         this.errorMessage = (error && error.message) ? error.message : 'An unexpected error occurred';
+         this.errorDetails = (error && error.stack) ? error.stack : '';
+       },
+       retry() {
+         if (this.retryCount < this.maxRetries) {
+           this.retryCount++;
+           this.hasError = false;
+           this.errorMessage = '';
+           this.errorDetails = '';
+           window.location.reload();
+         } else {
+           if (typeof showToast === 'function') {
+             showToast('Maximum retry attempts reached. Please refresh manually.', 'error', 0, true);
+           } else {
+             alert('Maximum retry attempts reached. Please refresh manually.');
+           }
+         }
+       },
+       reset() {
+         this.hasError = false;
+         this.errorMessage = '';
+         this.errorDetails = '';
+         this.retryCount = 0;
+       }
+     }"
+  @error.window="handleError($event.detail)"
+>
+  <div
+    x-show="hasError"
+    class="alert alert-error mb-4 shadow-lg"
+    role="alert"
+    aria-live="assertive"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0 transform scale-95"
+    x-transition:enter-end="opacity-100 transform scale-100"
+  >
+    <div class="flex items-start justify-between w-full">
+      <div class="flex items-start">
+        <i
+          class="fas fa-exclamation-triangle text-2xl mr-3 mt-1"
+          aria-hidden="true"
+        ></i>
+        <div class="flex-1">
+          <h4 class="font-bold text-lg">Something went wrong</h4>
+          <p class="text-sm opacity-90" x-text="errorMessage"></p>
+
+          <details class="mt-2" x-show="errorDetails">
+            <summary class="cursor-pointer text-sm font-medium hover:underline">
+              Technical Details
+            </summary>
+            <pre
+              class="text-xs bg-black bg-opacity-20 p-2 rounded mt-2 overflow-auto max-h-32"
+              x-text="errorDetails"
+            ></pre>
+          </details>
+
+          <div class="flex items-center gap-2 mt-3">
+            <button
+              @click="retry()"
+              class="btn btn-sm btn-outline"
+              :disabled="retryCount >= maxRetries"
+              :class="{ 'btn-disabled': retryCount >= maxRetries }"
+            >
+              <i class="fas fa-redo mr-1" aria-hidden="true"></i>
+              <span x-show="retryCount < maxRetries">Retry</span>
+              <span x-show="retryCount >= maxRetries">Max Retries Reached</span>
+              <span
+                class="badge badge-xs ml-1"
+                x-show="retryCount > 0"
+                x-text="retryCount"
+              ></span>
+            </button>
+
+            <button @click="reset()" class="btn btn-sm btn-ghost">
+              <i class="fas fa-times mr-1" aria-hidden="true"></i>
+              Dismiss
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Network Status Indicator -->
+<div
+  class="network-status fixed top-4 left-4 z-50"
+  x-data="{ 
+       isOnline: navigator.onLine,
+       showStatus: false,
+       init() {
+         window.addEventListener('online', () => {
+           this.isOnline = true;
+           this.showStatus = true;
+           setTimeout(() => this.showStatus = false, 3000);
+         });
+         window.addEventListener('offline', () => {
+           this.isOnline = false;
+           this.showStatus = true;
+         });
+       }
+     }"
+  x-show="showStatus || !isOnline"
+  x-transition
+>
+  <div
+    class="alert alert-sm shadow-lg max-w-xs"
+    :class="isOnline ? 'alert-success' : 'alert-warning'"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="flex items-center">
+      <i
+        :class="isOnline ? 'fas fa-wifi' : 'fas fa-wifi-slash'"
+        class="text-sm mr-2"
+        aria-hidden="true"
+      ></i>
+      <span class="text-sm font-medium">
+        <span x-show="isOnline">Back online</span>
+        <span x-show="!isOnline">Offline mode</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Global error handler
+  window.addEventListener("error", function (event) {
+    const errorDetail = {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      stack: event.error ? event.error.stack : "",
+    };
+
+    // Dispatch custom error event for Alpine.js
+    window.dispatchEvent(new CustomEvent("error", { detail: errorDetail }));
+  });
+
+  // Promise rejection handler
+  window.addEventListener("unhandledrejection", function (event) {
+    const errorDetail = {
+      message: event.reason.message || "Promise rejection",
+      stack: event.reason.stack || "",
+    };
+
+    window.dispatchEvent(new CustomEvent("error", { detail: errorDetail }));
+  });
+
+  // HTMX error handlers
+  document.body.addEventListener("htmx:responseError", function (evt) {
+    handleAjaxError(evt.detail.xhr, "htmx", "Response Error");
+  });
+
+  document.body.addEventListener("htmx:sendError", function (evt) {
+    showToast("Network error occurred. Please check your connection.", "error");
+  });
+
+  document.body.addEventListener("htmx:timeout", function (evt) {
+    showToast("Request timed out. Please try again.", "warning");
+  });
+</script>

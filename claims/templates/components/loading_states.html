@@ -1,0 +1,316 @@
+{% load static %}
+
+<!-- Loading States -->
+
+<!-- Global Loading Overlay -->
+<div
+  id="global-loading"
+  class="loading-overlay"
+  x-data="{ show: false }"
+  x-show="show"
+  x-transition:enter="transition ease-out duration-300"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-200"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  style="display: none"
+  role="status"
+  aria-live="polite"
+  aria-label="Loading content"
+>
+  <div class="loading-content">
+    <div class="loading loading-spinner loading-lg"></div>
+    <div>
+      <div class="text-lg font-medium">Loading...</div>
+      <div class="text-sm opacity-70">Please wait while we fetch your data</div>
+    </div>
+  </div>
+</div>
+
+<!-- Skeleton Loading for Tables -->
+<div class="skeleton-table" style="display: none">
+  <div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+      <!-- Table Header Skeleton -->
+      <div class="flex justify-between items-center mb-6">
+        <div class="skeleton h-8 w-48"></div>
+        <div class="skeleton h-10 w-32"></div>
+      </div>
+
+      <!-- Table Skeleton -->
+      <div class="overflow-x-auto">
+        <table class="table w-full">
+          <thead>
+            <tr class="bg-base-200">
+              <th><div class="skeleton h-4 w-16"></div></th>
+              <th><div class="skeleton h-4 w-24"></div></th>
+              <th><div class="skeleton h-4 w-20"></div></th>
+              <th><div class="skeleton h-4 w-18"></div></th>
+              <th><div class="skeleton h-4 w-16"></div></th>
+              <th><div class="skeleton h-4 w-20"></div></th>
+              <th><div class="skeleton h-4 w-16"></div></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in "12345"|make_list %}
+            <tr>
+              <td><div class="skeleton h-4 w-12"></div></td>
+              <td>
+                <div class="flex items-center space-x-3">
+                  <div class="skeleton w-8 h-8 rounded-full shrink-0"></div>
+                  <div>
+                    <div class="skeleton h-4 w-32 mb-1"></div>
+                    <div class="skeleton h-3 w-20"></div>
+                  </div>
+                </div>
+              </td>
+              <td><div class="skeleton h-4 w-28"></div></td>
+              <td><div class="skeleton h-4 w-20"></div></td>
+              <td><div class="skeleton h-6 w-16 rounded-full"></div></td>
+              <td>
+                <div class="skeleton h-4 w-24 mb-1"></div>
+                <div class="skeleton h-3 w-16"></div>
+              </td>
+              <td>
+                <div class="flex space-x-1">
+                  <div class="skeleton h-8 w-8 rounded"></div>
+                  <div class="skeleton h-8 w-8 rounded"></div>
+                  <div class="skeleton h-8 w-8 rounded"></div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Skeleton -->
+      <div class="flex justify-between items-center mt-8">
+        <div class="skeleton h-4 w-40"></div>
+        <div class="flex gap-1">
+          {% for i in "1234567"|make_list %}
+          <div class="skeleton h-8 w-8 rounded"></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Skeleton Loading for Cards -->
+<div class="skeleton-cards" style="display: none">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for i in "123456"|make_list %}
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div class="flex items-center space-x-3 mb-4">
+          <div class="skeleton w-12 h-12 rounded-full shrink-0"></div>
+          <div class="flex-1">
+            <div class="skeleton h-4 w-32 mb-2"></div>
+            <div class="skeleton h-3 w-20"></div>
+          </div>
+        </div>
+        <div class="skeleton h-4 w-full mb-2"></div>
+        <div class="skeleton h-4 w-3/4 mb-4"></div>
+        <div class="card-actions justify-end">
+          <div class="skeleton h-8 w-20 rounded"></div>
+          <div class="skeleton h-8 w-16 rounded"></div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Inline Loading Spinner -->
+<div class="inline-loading" style="display: none">
+  <div class="flex items-center justify-center py-8">
+    <div class="loading loading-spinner loading-lg text-primary"></div>
+  </div>
+</div>
+
+<!-- Progress Bar Loading -->
+<div class="progress-loading" style="display: none">
+  <div class="w-full bg-base-300 rounded-full h-2">
+    <div
+      class="bg-primary h-2 rounded-full animate-pulse"
+      style="width: 45%"
+    ></div>
+  </div>
+  <div class="text-center text-sm text-base-content/60 mt-2">
+    Loading your data...
+  </div>
+</div>
+
+<!-- Button Loading State -->
+<template id="button-loading-template">
+  <div class="flex items-center">
+    <div class="loading loading-spinner loading-xs mr-2"></div>
+    <span>Loading...</span>
+  </div>
+</template>
+
+<script>
+  // Loading state management
+  class LoadingManager {
+    constructor() {
+      this.loadingStates = new Map();
+      this.globalLoading = document.getElementById("global-loading");
+    }
+
+    show(target, type = "spinner", message = "Loading...") {
+      const element =
+        typeof target === "string" ? document.getElementById(target) : target;
+      if (!element) return;
+
+      this.loadingStates.set(element, {
+        type,
+        message,
+        originalContent: element.innerHTML,
+      });
+
+      switch (type) {
+        case "skeleton":
+          this.showSkeleton(element);
+          break;
+        case "progress":
+          this.showProgress(element, message);
+          break;
+        case "button":
+          this.showButtonLoading(element);
+          break;
+        default:
+          this.showSpinner(element, message);
+      }
+
+      element.setAttribute("aria-busy", "true");
+      element.setAttribute("aria-live", "polite");
+    }
+
+    hide(target) {
+      const element =
+        typeof target === "string" ? document.getElementById(target) : target;
+      if (!element || !this.loadingStates.has(element)) return;
+
+      const state = this.loadingStates.get(element);
+      element.innerHTML = state.originalContent;
+      element.removeAttribute("aria-busy");
+
+      this.loadingStates.delete(element);
+    }
+
+    showGlobal(message = "Loading...") {
+      if (this.globalLoading) {
+        this.globalLoading.querySelector(".text-lg").textContent = message;
+        this.globalLoading.style.display = "flex";
+        this.globalLoading.__x.$data.show = true;
+      }
+    }
+
+    hideGlobal() {
+      if (this.globalLoading) {
+        this.globalLoading.__x.$data.show = false;
+        setTimeout(() => {
+          this.globalLoading.style.display = "none";
+        }, 200);
+      }
+    }
+
+    showSkeleton(element) {
+      const skeleton = document
+        .querySelector(".skeleton-table")
+        .cloneNode(true);
+      skeleton.style.display = "block";
+      skeleton.classList.remove("skeleton-table");
+      element.innerHTML = "";
+      element.appendChild(skeleton);
+    }
+
+    showSpinner(element, message) {
+      element.innerHTML = `
+      <div class="flex items-center justify-center py-12">
+        <div class="loading loading-spinner loading-lg text-primary mr-4"></div>
+        <span class="text-lg">${message}</span>
+      </div>
+    `;
+    }
+
+    showProgress(element, message) {
+      element.innerHTML = `
+      <div class="flex flex-col items-center py-12">
+        <div class="w-64 bg-base-300 rounded-full h-2 mb-4">
+          <div class="bg-primary h-2 rounded-full animate-pulse" style="width: 45%"></div>
+        </div>
+        <span class="text-lg">${message}</span>
+      </div>
+    `;
+    }
+
+    showButtonLoading(button) {
+      const template = document.getElementById("button-loading-template");
+      const content = template.content.cloneNode(true);
+      button.innerHTML = "";
+      button.appendChild(content);
+      button.disabled = true;
+    }
+  }
+
+  // Global loading manager instance with safety check
+  if (!window.loadingManager) {
+    window.loadingManager = new LoadingManager();
+  }
+
+  // Form loading states
+  document.addEventListener("submit", function (evt) {
+    const form = evt.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    if (submitBtn && !form.hasAttribute("data-no-loading")) {
+      loadingManager.show(submitBtn, "button");
+
+      // Re-enable button after timeout as fallback
+      setTimeout(() => {
+        loadingManager.hide(submitBtn);
+      }, 10000);
+    }
+  });
+</script>
+
+<style>
+  /* Custom skeleton animations */
+  .skeleton {
+    @apply bg-base-300 animate-pulse;
+  }
+
+  /* Loading animations */
+  @keyframes shimmer {
+    0% {
+      background-position: -200px 0;
+    }
+    100% {
+      background-position: calc(200px + 100%) 0;
+    }
+  }
+
+  .loading-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    background-size: 200px 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Smooth transitions */
+  .loading-container > div {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  }
+
+  .loading-container > div.hidden {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+</style>
