@@ -34,7 +34,7 @@ A modern, responsive insurance claims management system built with Django and en
 ## 🛠️ Technology Stack
 
 - **Backend**: Django 5.2+
-- **Frontend**: Tailwind CSS 4+ with daisyUI 5+
+- **Frontend**: Tailwind CSS 4.1+ with daisyUI 5.0+
 - **JavaScript**: Alpine.js 3+ and HTMX 1.9+
 - **Icons**: Font Awesome 6+
 - **Database**: SQLite (development) / PostgreSQL (production ready)
@@ -68,7 +68,7 @@ A modern, responsive insurance claims management system built with Django and en
    pipenv run python manage.py migrate
    ```
 
-4. **Load sample data** (if available):
+4. **Load sample data** (optional - project includes sample data):
 
    ```bash
    pipenv run python manage.py load_claims_data
@@ -77,10 +77,6 @@ A modern, responsive insurance claims management system built with Django and en
 5. **Start development servers**:
 
    ```bash
-   # Option 1: Use the helper script (recommended)
-   ./dev.sh start
-
-   # Option 2: Manual startup
    # Terminal 1: Start Tailwind CSS watcher
    pipenv run python manage.py tailwind start
 
@@ -126,15 +122,25 @@ claimsmanager/
 │   │   │   └── ...
 │   │   ├── components/         # Reusable components
 │   │   └── registration/       # Authentication templates
+│   ├── management/
+│   │   └── commands/          # Custom Django commands
+│   │       └── load_claims_data.py
 │   ├── templatetags/          # Custom template filters
 │   └── ...
 ├── theme/                     # Tailwind CSS app
 │   ├── static_src/
 │   │   ├── src/styles.css    # Main stylesheet
 │   │   └── package.json      # Node.js dependencies
-│   └── static/               # Built CSS files
+│   └── static/css/dist/      # Built CSS files
 ├── claims_management/        # Django project settings
-├── data/                    # Sample data files
+├── data/                    # Sample CSV data files
+│   ├── claim_detail_data.csv
+│   └── claim_list_data.csv
+├── staticfiles/             # Collected static files
+├── Pipfile                  # Python dependencies
+├── Pipfile.lock            # Locked dependency versions
+├── LICENSE                 # MIT License file
+├── db.sqlite3             # SQLite database
 └── manage.py
 ```
 
