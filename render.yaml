@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: claims-management-system
+    runtime: python3
+    buildCommand: "./build.sh"
+    startCommand: "pipenv run gunicorn claims_management.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: WEB_CONCURRENCY
+        value: 4
+  - type: pserv
+    name: claims-management-db
+    databaseName: claims_db
+    databaseUser: claims_user

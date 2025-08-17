@@ -7,6 +7,10 @@ name = "pypi"
 django = "*"
 django-tailwind = "*"
 django-browser-reload = "*"
+gunicorn = "*"
+whitenoise = "*"
+psycopg2-binary = "*"
+dj-database-url = "*"
 
 [dev-packages]
 pytest = "*"
