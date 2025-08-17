@@ -11,7 +11,7 @@ services:
         value: False
       - key: WEB_CONCURRENCY
         value: 4
+
   - type: pserv
     name: claims-management-db
-    databaseName: claims_db
-    databaseUser: claims_user
+    plan: free
