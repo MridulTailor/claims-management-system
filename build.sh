@@ -15,5 +15,5 @@ pipenv run python manage.py collectstatic --no-input
 # Run database migrations
 pipenv run python manage.py migrate
 
-# Load CSV data
-pipenv run python manage.py load_csv_data
+# Load CSV data (FIXED COMMAND NAME)
+pipenv run python manage.py load_claims_data
