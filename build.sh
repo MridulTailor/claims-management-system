@@ -15,9 +15,8 @@ pipenv run python manage.py tailwind build --no-input
 # Collect static files (this will now include compiled Tailwind CSS)
 pipenv run python manage.py collectstatic --no-input
 
-# Not for production use, uncomment if needed
-# # Run database migrations
-# pipenv run python manage.py migrate
+# Run database migrations
+pipenv run python manage.py migrate
 
-# # Load CSV data (FIXED COMMAND NAME)
-# pipenv run python manage.py load_claims_data
+# Load CSV data (FIXED COMMAND NAME)
+pipenv run python manage.py load_claims_data
