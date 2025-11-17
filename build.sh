@@ -2,6 +2,9 @@
 # exit on error
 set -o errexit
 
+# Install pipenv if not already installed
+pip install pipenv
+
 # Install dependencies
 pipenv install --deploy
 
